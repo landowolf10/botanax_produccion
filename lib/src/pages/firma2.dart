@@ -3,12 +3,9 @@ import 'dart:async';
 import 'dart:ui' as ui;
 import 'package:botanax_v5_9_produccion/src/pages/botanax.dart';
 import 'package:botanax_v5_9_produccion/src/pages/dialogos.dart';
-import 'package:botanax_v5_9_produccion/src/pages/ticket.dart';
+import 'package:botanax_v5_9_produccion/src/pages/ticket2.dart';
 import 'package:flutter/material.dart';
-import 'package:image/image.dart';
-import 'package:image_picker_saver/image_picker_saver.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as p;
 
 const directoryName = 'Signature';
 
