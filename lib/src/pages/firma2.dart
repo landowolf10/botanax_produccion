@@ -14,7 +14,7 @@ List<Offset> _points = <Offset>[];
 File filePath;
 var file;
 var firmaPath;
-var firma;
+File firma;
 
 class SignApp extends StatefulWidget {
   @override
@@ -100,7 +100,7 @@ class SignAppState extends State<SignApp> {
     firma = File('$path/$directoryName/firma.png')
         ..writeAsBytesSync(pngBytes.buffer.asInt8List());
 
-    print(firma);
+    print('Firma: ' + firma.toString());
 
     /*var pngBytes = await renderedImage.toByteData(format: ui.ImageByteFormat.png);
     Directory tempDir = await getTemporaryDirectory();
@@ -235,7 +235,7 @@ class SignaturePainter extends CustomPainter
 
 class GetFirma
 {
-  dynamic getSign()
+  File getSign()
   {
     return firma;
   }

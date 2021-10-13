@@ -1,14 +1,14 @@
+import 'dart:ffi';
+import 'dart:io' as Io;
+import 'dart:typed_data';
+
 import 'package:botanax_v5_9_produccion/src/pages/botanax.dart';
 import 'package:botanax_v5_9_produccion/src/pages/firma2.dart';
 import 'package:botanax_v5_9_produccion/src/pages/funciones.dart';
 import 'package:botanax_v5_9_produccion/src/pages/login.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:pdf/widgets.dart' as pdfLib;
-import 'package:pdf/pdf.dart';
-import 'dart:io';
 import 'package:flutter/rendering.dart';
-import 'package:printing/printing.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:bluetooth_print/bluetooth_print.dart';
@@ -25,7 +25,7 @@ class FirmaPDFPageState extends State<FirmaPDF>
 
   bool _connected = false;
   BluetoothDevice _device;
-  String tips = 'no device connect';
+  String tips = 'No existe dispositivo conectado';
 
   @override
   void initState() {
@@ -41,19 +41,19 @@ class FirmaPDFPageState extends State<FirmaPDF>
     bool isConnected=await bluetoothPrint.isConnected;
 
     bluetoothPrint.state.listen((state) {
-      print('current device status: $state');
+      print('Current device status: $state');
 
       switch (state) {
         case BluetoothPrint.CONNECTED:
           setState(() {
             _connected = true;
-            tips = 'connect success';
+            tips = 'Conectado correctamente';
           });
           break;
         case BluetoothPrint.DISCONNECTED:
           setState(() {
             _connected = false;
-            tips = 'disconnect success';
+            tips = 'Desconectado correctamente';
           });
           break;
         default:
@@ -128,21 +128,21 @@ class FirmaPDFPageState extends State<FirmaPDF>
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: <Widget>[
                             OutlinedButton(
-                              child: Text('connect'),
+                              child: Text('Conectar'),
                               onPressed:  _connected?null:() async {
                                 if(_device!=null && _device.address !=null){
                                   await bluetoothPrint.connect(_device);
                                 }else{
                                   setState(() {
-                                    tips = 'please select device';
+                                    tips = 'Por favor seleccione un dispositivo';
                                   });
-                                  print('please select device');
+                                  print('Por favor seleccione un dispositivo');
                                 }
                               },
                             ),
                             SizedBox(width: 10.0),
                             OutlinedButton(
-                              child: Text('disconnect'),
+                              child: Text('Desconectar'),
                               onPressed:  _connected?() async {
                                 await bluetoothPrint.disconnect();
                               }:null,
@@ -150,7 +150,7 @@ class FirmaPDFPageState extends State<FirmaPDF>
                           ],
                         ),
                         OutlinedButton(
-                          child: Text('print receipt(esc)'),
+                          child: Text('Imprimir ticket'),
                           onPressed:  _connected?() async {
                             Map<String, dynamic> config = Map();
                             List<LineText> list = [];
@@ -158,7 +158,18 @@ class FirmaPDFPageState extends State<FirmaPDF>
                             ByteData data = await rootBundle.load("img/botanaxLogo.png");
                             List<int> imageBytes = data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
                             String base64Image = base64Encode(imageBytes);
-                            list.add(LineText(type: LineText.TYPE_IMAGE, content: base64Image, align: LineText.ALIGN_CENTER, linefeed: 1));
+                            list.add(LineText(type: LineText.TYPE_IMAGE, content: base64Image, align: LineText.ALIGN_LEFT, linefeed: 1));
+
+                            //Image signData = decodeImage(firma.getSign());
+
+                            //ByteData signData = Image.file(File('/storage/emulated/0/Android/data/com.example.botanax_v5_9_produccion/files/Signature/firma.png')) as ByteData;
+                            print('DATA: ' + firma.getSign().toString());
+                            final signBytes = Io.File('/storage/emulated/0/Android/data/com.example.botanax_v5_9_produccion/files/Signature/firma.png').readAsBytesSync();
+                            String base64Sign = base64Encode(signBytes);
+
+                            /*var signData = Image.file(File('/storage/emulated/0/Android/data/com.example.botanax_v5_9_produccion/files/Signature/firma.png')) as ByteData;
+                            List<int> signBytes = signData.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+                            String base64Sign = base64Encode(signBytes);*/
 
                             list.add(LineText(type: LineText.TYPE_TEXT, content: 'Botanax del Puerto', weight: 1, align: LineText.ALIGN_CENTER, linefeed: 1));
                             list.add(LineText(type: LineText.TYPE_TEXT, content: 'RFC: 454613545342154', weight: 0, align: LineText.ALIGN_CENTER, linefeed: 1));
@@ -167,6 +178,7 @@ class FirmaPDFPageState extends State<FirmaPDF>
                             list.add(LineText(type: LineText.TYPE_TEXT, content: firma.formattedDate(), align: LineText.ALIGN_CENTER, linefeed: 1));
                             list.add(LineText(type: LineText.TYPE_TEXT, content: 'Vendedor: ' + user.getNombreUsuario(), align: LineText.ALIGN_CENTER, linefeed: 1));
                             list.add(LineText(type: LineText.TYPE_TEXT, content: 'Cliente: ' + botana.getClient(), align: LineText.ALIGN_CENTER, linefeed: 1));
+                            list.add(LineText(linefeed: 1));
                             list.add(LineText(type: LineText.TYPE_TEXT, content: 'Prod:     Cant:    P/U:     P/T:', align: LineText.ALIGN_CENTER, linefeed: 1));
                             for(int i = 0; i < botana.getProducts().length; i++)
                               list.add(
@@ -179,25 +191,38 @@ class FirmaPDFPageState extends State<FirmaPDF>
                                   align: LineText.ALIGN_CENTER, linefeed: 1
                                 )
                               );
+                            list.add(LineText(linefeed: 1));
                             list.add(LineText(type: LineText.TYPE_TEXT, content: 'Total a pagar', align: LineText.ALIGN_CENTER, linefeed: 1));
-                            list.add(LineText(type: LineText.TYPE_TEXT, content: botana.getTotal().toString(), align: LineText.ALIGN_CENTER, linefeed: 1));
-                            if(reembolsos.getProduct().length > 0)
+                            list.add(LineText(type: LineText.TYPE_TEXT, content: '\$' + botana.getTotal().toString(), align: LineText.ALIGN_CENTER, linefeed: 1));
+                            list.add(LineText(linefeed: 1));
+
+                            if(reembolsos.getQuantity().length > 0)
                             {
                               list.add(LineText(type: LineText.TYPE_TEXT, content: 'Cambios:', align: LineText.ALIGN_CENTER, linefeed: 1));
                               list.add(LineText(type: LineText.TYPE_TEXT, content: 'Nombre producto:       Cantidad:', align: LineText.ALIGN_CENTER, linefeed: 1));
-                              for(int i = 0; i < reembolsos.getProduct().length; i++)
+                              
+                              print("Productos reembo: " + reembolsos.getProduct().toString());
+                              
+                              for(int i = 0; i < reembolsos.getQuantity().length; i++)
+                              {
+                                List cleanReemboNames = reembolsos.getProduct();
+                                cleanReemboNames.remove("");
+
                                 list.add(
                                   LineText(
                                     type: LineText.TYPE_TEXT,
-                                    content: reembolsos.getProduct()[i] + '      ' +
-                                            reembolsos.getQuantity()[i].toString(),
-                                    align: LineText.ALIGN_CENTER,
+                                    content: cleanReemboNames[i] + '              ' +
+                                             reembolsos.getQuantity()[i].toString(),
+                                    align: LineText.ALIGN_LEFT,
                                     linefeed: 1
                                   )
                                 );
+                              }
                             }
+                            list.add(LineText(linefeed: 1));
                             list.add(LineText(type: LineText.TYPE_TEXT, content: 'Firma del cliente:', align: LineText.ALIGN_CENTER, linefeed: 1));
-                            //list.add(LineText(type: LineText.TYPE_IMAGE, content: Image.file(File('/storage/emulated/0/Android/data/com.example.botanax_v5_9_produccion/files/Signature/firma.png')).toString(), align: LineText.ALIGN_CENTER, linefeed: 1));
+                            list.add(LineText(type: LineText.TYPE_IMAGE, content: base64Sign, align: LineText.ALIGN_CENTER, linefeed: 1));
+                            list.add(LineText(linefeed: 1));
                             list.add(LineText(type: LineText.TYPE_TEXT, content: 'Teléfono: 755 55 6 39 57', align: LineText.ALIGN_CENTER, linefeed: 1));
                             list.add(LineText(linefeed: 1));
 
